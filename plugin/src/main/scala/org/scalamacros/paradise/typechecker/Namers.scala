@@ -4,8 +4,8 @@ package typechecker
 trait Namers {
   self: AnalyzerPlugins =>
 
-  import global._
-  import analyzer._
+  import global.analyzer.global._
+  import global.analyzer._
   import definitions._
   import scala.reflect.internal.Flags._
   import analyzer.{Namer => NscNamer}
@@ -47,7 +47,7 @@ trait Namers {
       def coreCreateAssignAndEnterSymbol = {
         val sym = tree match {
           case PackageDef(pid, _) => createPackageSymbol(tree.pos, pid) // package symbols are entered elsewhere
-          case Import(_, _)       => createImportSymbol(tree) // import symbols are dummies, no need to enter them anywhere
+          case imp: Import        => createImportSymbol(imp) // import symbols are dummies, no need to enter them anywhere
           case mdef: MemberDef    => enterInScope(setPrivateWithin(mdef, createMemberSymbol(mdef, mdef.name, mask)))
           case _                  => abort("Unexpected tree: " + tree)
         }
@@ -281,8 +281,8 @@ trait Namers {
           else sym setInfo completerOf(tree)
         case tree @ TypeDef(_, _, _, _) =>
           sym setInfo completerOf(tree)
-        case tree @ Import(_, _) =>
-          sym setInfo completerOf(tree)
+        case imp: Import =>
+          sym setInfo (namerOf(tree.symbol) importTypeCompleter imp)
       })
     }
 
